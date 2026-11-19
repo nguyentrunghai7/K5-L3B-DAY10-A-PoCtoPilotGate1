@@ -8,9 +8,9 @@ CI là bootstrap theo scenario của lab, không phải bảo đảm production.
 
 | Mã lần chạy | Bộ/mốc | Thay đổi | pass_rate (CI95) | pass_k | Hoàn sai/lỗi oan/PII | Escalation |
 |---|---|---|---|---|---|---|
-| R-base-before-20261119-223958-bde05c | base/before | Baseline | None None | None | None/None/None | None |
-| R-base-after-20261119-224039-232644 | base/after | Ba cổng vòng 1; con số ghi B7 | None None | None | None/None/None | None |
-| R-base-prepared-20261119-224237-232644 | base/prepared | Chỉ chốt snapshot, không đổi hành vi | None None | None | None/None/None | None |
+| R-base-before-20261119-223958-bde05c | base/before | Baseline | 0.9909 [0.9727, 1.0] | 0.9545 | 20000/1/0 | 0.2273 |
+| R-base-after-20261119-224039-232644 | base/after | Ba cổng vòng 1; con số ghi B7 | 1.0 [1.0, 1.0] | 1.0 | 0/0/0 | 0.2364 |
+| R-base-prepared-20261119-224237-232644 | base/prepared | Chỉ chốt snapshot, không đổi hành vi | 1.0 [1.0, 1.0] | 1.0 | 0/0/0 | 0.2364 |
 
 ## B1 · Câu 2.1 · Kết quả ban đầu và cổng phát hành
 
