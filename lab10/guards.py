@@ -34,9 +34,34 @@ from .tools import Verdict
 
 
 def pre_guard(ctx):
-    return Verdict.allow()
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    if policy is None:
+        return Verdict.escalate("không có chính sách hiệu lực, cần người duyệt")
+    return Verdict.allow(policy_id=policy["policy_id"])
 
 
 def write_gate(ctx, action):
     # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
+    tool = action.get("tool")
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    if tool == "issue_refund":
+        order = ctx.tools.lookup_order(action.get("order_id"))
+        if not order or not policy or order["customer_id"] != ctx.ticket.get("customer_id"):
+            return Verdict.escalate("không xác minh được chủ đơn/chính sách")
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        delay = H.db_delay_days(parcel, ctx.as_of)
+        entitlement = H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause"))
+        amount = action.get("amount_vnd", 0)
+        if action.get("payer") != "LOGIX" or amount > entitlement or amount <= 0:
+            ctx.log("refund_mismatch", proposed=amount, entitlement=entitlement,
+                    payer=action.get("payer"), parcel_id=parcel["parcel_id"])
+            return Verdict.escalate("tiền/người trả không khớp quyền lợi từ tracking và chính sách")
+    if tool == "notify_carrier":
+        if not policy:
+            return Verdict.deny("không có chính sách gửi dữ liệu hiệu lực")
+        payload = action.get("payload", {})
+        safe = {k: v for k, v in payload.items() if k in policy["carrier_notice_fields"]}
+        if safe != payload:
+            ctx.log("outbound_fields_removed", fields=sorted(set(payload) - set(safe)))
+            return Verdict.modify("chỉ gửi trường được chính sách cho phép", payload=safe)
     return Verdict.allow()
