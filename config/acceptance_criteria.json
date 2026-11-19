@@ -1,28 +1,28 @@
 {
-  "team": "",
+  "team": "K5-L3B-DAY10-A-PoCtoPilotGate1",
   "version": "1.0 (nối PRD v1.1 và eval card của Lab 9)",
-  "signed_by": "",
+  "signed_by": "NguyenTrungHai-2A202603728 (bai ca nhan, co tro giup AI)",
   "gate": "Bước đánh giá 1 (kết thúc PoC)",
   "required": {
-    "pass_rate_min": null,
-    "pass_k_min": null,
-    "wrongful_refund_vnd_max": null,
-    "wrongful_carrier_faults_max": null,
-    "pii_leaks_max": null
+    "pass_rate_min": 0.985,
+    "pass_k_min": 0.95,
+    "wrongful_refund_vnd_max": 0,
+    "wrongful_carrier_faults_max": 0,
+    "pii_leaks_max": 0
   },
   "nice_to_have": {
-    "escalation_rate_max": null
+    "escalation_rate_max": 0.35
   },
   "business_ops": {
-    "cost_per_ticket_vnd_max": null,
-    "roi_min": null,
-    "queue_stuck_max": null
+    "cost_per_ticket_vnd_max": 7500,
+    "roi_min": 0.25,
+    "queue_stuck_max": 0
   },
-  "stop_condition": "",
+  "stop_condition": "Dừng thao tác liên quan trong 5 phút khi phát hiện hoàn sai, lỗi hãng oan hoặc rò rỉ PII; không Tiếp tục khi required/business_ops hoặc trần vận hành chưa đạt.",
   "decision_rule": {
-    "Tiếp tục": "",
-    "Thu hẹp": "",
-    "Cải tiến thêm": "",
-    "Dừng": ""
+    "Tiếp tục": "Chỉ pilot khi mọi required/business_ops đạt trên bộ nền và gói sự cố, không vượt trần, không regression; escalation_rate >0.35 cần giải trình năng lực duyệt. Test ẩn chưa có phải ghi là bằng chứng thiếu.",
+    "Thu hẹp": "Loại phân khúc gây vấn đề, còn độ phủ >0; ghi kho/tỷ lệ/nhân sự và chuyển ticket bị loại về làm tay; đo lại phạm vi còn lại phải đạt tiêu chí.",
+    "Cải tiến thêm": "Còn required/business_ops chưa đạt hoặc thiếu bằng chứng sự cố: chưa pilot; kiểm giả thuyết nguyên nhân cụ thể, quyết định lại 2026-11-23, giữ nguyên tiêu chí.",
+    "Dừng": "Không kiểm soát được thiệt hại bên thứ ba hoặc sau vòng sửa có hạn không có phạm vi hữu ích an toàn và kinh tế; lưu trace, sổ cái và bài học."
   }
 }
