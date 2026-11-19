@@ -1,12 +1,14 @@
 {
-  "team": "",
-  "members": [],
-  "incident": "",
-  "decision_v1": "",
-  "decision_v2": "",
+  "team": "K5-L3B-DAY10-A-PoCtoPilotGate1",
+  "members": [
+    "NguyenTrungHai-2A202603728"
+  ],
+  "incident": "S1",
+  "decision_v1": "Cải tiến thêm",
+  "decision_v2": "Cải tiến thêm",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Thiết kế giả định tracking ngày giao/trạng thái và ledger nhất quán; S1-20/21 cho thấy DELIVERED vẫn thiếu ngày, còn đồng thời nhiều worker chưa được mô phỏng.",
+    "reduce_or_prevent": "Gate ngăn các đường sai đã kiểm trong mô phỏng tuần tự (S1 65/65 đúng, hoàn sai và lỗi oan bằng 0, tối đa 2 lỗi/hãng/ngày), nhưng chỉ giảm rủi ro thực vì nguồn có thể sai và kiểm cap chưa có giao dịch đồng thời.",
+    "measure_in_pilot": "Trước Gate 2 phải đo lại độ khớp POD/tracking, lịch sử lỗi 7 ngày, cap/idempotency dưới tải đồng thời, tỷ lệ chuyển người và thời gian chờ p95/p99, chi phí tổng cùng ROI theo kho trên lưu lượng pilot thật."
   }
 }

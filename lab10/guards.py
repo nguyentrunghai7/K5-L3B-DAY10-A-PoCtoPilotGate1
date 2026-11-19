@@ -37,6 +37,26 @@ def pre_guard(ctx):
     policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
     if policy is None:
         return Verdict.escalate("không có chính sách hiệu lực, cần người duyệt")
+    order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
+    if order:
+        parcels = order.get("parcels") or []
+        parcel_id = ctx.ticket.get("parcel_id")
+        if not parcels or (parcel_id and not any(p.get("parcel_id") == parcel_id for p in parcels)):
+            ctx.log("tracking_incomplete", reason="không xác định được kiện")
+            return Verdict.escalate("cần xác minh kiện hàng trước khi tính quyền lợi")
+        for parcel in parcels:
+            try:
+                promised = H.d(parcel["promised_date"])
+                delivered = H.d(parcel["delivered_date"]) if parcel.get("delivered_date") else None
+                inconsistent = (parcel.get("status") == "DELIVERED" and delivered is None)
+                inconsistent |= bool(delivered and (delivered > H.d(ctx.as_of) or delivered < H.d(order["placed_at"])))
+                H.db_delay_days(parcel, ctx.as_of)
+            except (ValueError, TypeError, KeyError):
+                inconsistent = True
+            if inconsistent:
+                ctx.log("tracking_incomplete", parcel_id=parcel.get("parcel_id"),
+                        status=parcel.get("status"), delivered_date=parcel.get("delivered_date"))
+                return Verdict.escalate("tracking thiếu/mâu thuẫn ngày giao: chuyển người xác minh")
     return Verdict.allow(policy_id=policy["policy_id"])
 
 
@@ -52,10 +72,47 @@ def write_gate(ctx, action):
         delay = H.db_delay_days(parcel, ctx.as_of)
         entitlement = H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause"))
         amount = action.get("amount_vnd", 0)
-        if action.get("payer") != "LOGIX" or amount > entitlement or amount <= 0:
+        if action.get("payer") != "LOGIX" or amount != entitlement or amount <= 0:
             ctx.log("refund_mismatch", proposed=amount, entitlement=entitlement,
                     payer=action.get("payer"), parcel_id=parcel["parcel_id"])
-            return Verdict.escalate("tiền/người trả không khớp quyền lợi từ tracking và chính sách")
+            if entitlement <= 0:
+                return Verdict.deny("tracking và chính sách không có quyền lợi hoàn")
+            if entitlement > policy["auto_limit_vnd"]:
+                return Verdict.escalate("cần người phê duyệt quyền lợi đã tính lại")
+            return Verdict.modify("tính lại tiền/người trả từ nguồn có thẩm quyền",
+                                  amount_vnd=entitlement, payer="LOGIX", approval_id=None, basis="policy")
+    if tool == "file_carrier_fault":
+        order = ctx.tools.lookup_order(action.get("order_id"))
+        if not order or not policy:
+            return Verdict.deny("không có căn cứ ghi lỗi hãng")
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        delay = H.db_delay_days(parcel, ctx.as_of)
+        if not H.carrier_at_fault(policy, parcel, delay):
+            ctx.log("carrier_fault_blocked", reason="tracking không đủ căn cứ")
+            return Verdict.deny("nguyên nhân/độ trễ không đủ điều kiện ghi lỗi")
+        rows = ctx.tools.fault_rows(carrier_id=parcel["carrier_id"])
+        cap = ctx.tools.ops_limits().get("max_auto_strikes_per_carrier_per_day")
+        if cap is None or len(rows) >= cap:
+            ctx.log("carrier_daily_cap", carrier_id=parcel["carrier_id"], count=len(rows), cap=cap)
+            return Verdict.deny("chạm trần lỗi tự động mỗi hãng/ngày; Oanh rà soát, giữ quyền lợi khách")
+        if any(r.get("parcel_id") == parcel["parcel_id"] for r in rows):
+            return Verdict.deny("kiện đã có lỗi ghi nhận, không ghi trùng")
+        corrected = dict(parcel_id=parcel["parcel_id"], carrier_id=parcel["carrier_id"],
+                         driver_id=parcel.get("driver_id"), delay_days=delay)
+        if any(action.get(k) != v for k, v in corrected.items()):
+            ctx.log("carrier_fault_corrected", **corrected)
+            return Verdict.modify("ghi trách nhiệm theo đúng kiện trong tracking", **corrected)
+    if tool == "send_reply":
+        # A denial may bypass issue_refund entirely. Check that path as well.
+        proposal = next((e for e in reversed(ctx.events) if e["type"] == "proposal"), None)
+        order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
+        if proposal and order and policy and not ctx.tools.ledger_rows(order_id=order["order_id"]):
+            parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+            entitled = H.entitlement_vnd(policy, order, H.db_delay_days(parcel, ctx.as_of),
+                                        parcel.get("delay_cause"))
+            if proposal["amount_vnd"] <= 0 and entitled > 0:
+                ctx.log("false_denial_blocked", entitlement=entitled)
+                return Verdict.escalate("đề xuất từ chối trái quyền lợi DB: cần người xử lý")
     if tool == "notify_carrier":
         if not policy:
             return Verdict.deny("không có chính sách gửi dữ liệu hiệu lực")

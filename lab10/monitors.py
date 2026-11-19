@@ -19,7 +19,38 @@ def escalation_rate(trials):
     return sum(t["status"] == "escalated" for t in trials) / max(1, len(trials))
 
 
+def claim_tracking_mismatch_rate(trials):
+    """Fraction of all trials with an observed, conflicting model override."""
+    return sum(any(e.get("type") == "model_override" and e.get("db") != e.get("ticket")
+                   for e in t.get("events", [])) for t in trials) / max(1, len(trials))
+
+
+def tracking_incomplete_rate(trials):
+    """Guard observations, not labels; a missing observation is not proof of clean data."""
+    return sum(any(e.get("type") == "guard" and e.get("kind") == "tracking_incomplete"
+                   for e in t.get("events", [])) for t in trials) / max(1, len(trials))
+
+
+def carrier_cap_block_rate(trials):
+    return sum(any(e.get("type") == "guard" and e.get("kind") == "carrier_daily_cap"
+                   for e in t.get("events", [])) for t in trials) / max(1, len(trials))
+
+
+def max_carrier_faults_per_day(trials):
+    """Group independent simulated days and seeds, never sum five replicas as one day."""
+    counts = {}
+    for trial in trials:
+        for fault in trial.get("faults", []):
+            key = (trial.get("day"), trial.get("seed"), fault.get("carrier_id"))
+            counts[key] = counts.get(key, 0) + 1
+    return max(counts.values(), default=0)
+
+
 MONITORS = {
     "escalation_rate": escalation_rate,     # có sẵn; KHÔNG tính là metric mới của đội
+    "claim_tracking_mismatch_rate": claim_tracking_mismatch_rate,
+    "tracking_incomplete_rate": tracking_incomplete_rate,
+    "carrier_cap_block_rate": carrier_cap_block_rate,
+    "max_carrier_faults_per_day": max_carrier_faults_per_day,
 }
 STARTER_MONITORS = ("escalation_rate",)

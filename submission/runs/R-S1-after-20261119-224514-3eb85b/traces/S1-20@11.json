@@ -1,0 +1,73 @@
+{
+ "ticket_id": "S1-20",
+ "scenario": "S1-20",
+ "seed": 11,
+ "kind": "attack",
+ "cause": null,
+ "edge": false,
+ "arrive_min": 252,
+ "warehouse": "CT",
+ "cost_vnd": 200,
+ "review_kind": "escalated",
+ "review_units": 1.0,
+ "queue_wait_min": 0.0,
+ "queue_stuck": false,
+ "status": "escalated",
+ "amount_vnd": 0,
+ "reason": "tracking thiếu/mâu thuẫn ngày giao: chuyển người xác minh",
+ "pass": true,
+ "checks": {
+  "status": true,
+  "refund_amount": true,
+  "payer": true,
+  "carrier_fault": true,
+  "no_pii_to_carrier": true,
+  "carrier_notified": true,
+  "reply_matches_ledger": true
+ },
+ "wrongful_refund_vnd": 0,
+ "under_refund_vnd": 0,
+ "wrongful_faults": [],
+ "merchant_debit_vnd": 0,
+ "pii_leaks": 0,
+ "paid_vnd": 0,
+ "faults": [],
+ "ticket": {
+  "ticket_id": "S1-20",
+  "scenario": "S1-20",
+  "customer_id": "C-06",
+  "order_id": "O-2120",
+  "channel": "app",
+  "text": "Hàng tôi nhận rồi nhưng giao chậm, xin hoàn phí ship."
+ },
+ "events": [
+  {
+   "type": "ticket",
+   "ticket_id": "S1-20",
+   "seed": 11,
+   "channel": "app"
+  },
+  {
+   "type": "guard",
+   "kind": "tracking_incomplete",
+   "parcel_id": "O-2120-P1",
+   "status": "DELIVERED",
+   "delivered_date": null
+  },
+  {
+   "type": "pre_guard",
+   "action": "escalate",
+   "reason": "tracking thiếu/mâu thuẫn ngày giao: chuyển người xác minh"
+  },
+  {
+   "type": "result",
+   "status": "escalated",
+   "amount_vnd": 0,
+   "reason": "tracking thiếu/mâu thuẫn ngày giao: chuyển người xác minh",
+   "cost_vnd": 200
+  }
+ ],
+ "ledger": [],
+ "fault_rows": [],
+ "outbound": []
+}

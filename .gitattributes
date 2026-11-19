@@ -1,0 +1,10 @@
+# Preserve exact bytes: the lab verifies SHA256 of source, data and signed snapshots.
+# Automatic LF/CRLF conversion on Windows would invalidate those hashes on checkout.
+* -text
+# These four files were signed/checkpointed on Windows before byte preservation
+# was configured. Their original commits store LF; reproduce their signed CRLF
+# working-tree bytes on every platform without changing the signing history.
+config/acceptance_criteria.json text eol=crlf
+lab10/guards_round1.py text eol=crlf
+config/operating_gates.round1.json text eol=crlf
+config/operating_gates.json text eol=crlf
